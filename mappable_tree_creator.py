@@ -102,7 +102,7 @@ def filter_list_of_dict(obj):
 	return indi_only
 
 def main():
-	# Verify that 1 parameter was entered in command line
+	# Verify that 2 parameters was entered in command line
 	if len(sys.argv) != 3:
 		print 'Usage: python mappable_tree_creator.py input_file output_file'
 	
