@@ -9,26 +9,30 @@ unwanted_keys = ["HEAD", "SEX", "CHAN", "SOUR", "NOTE", "CENS", "EVEN", "RESI", 
 
 def add_latlons(obj):
 	locations = {}
+	num_queries = 0
+	num_repeats = 0
+	errors = 0
+	count = 0
+	listlen = len(obj)
 
 	for person in obj:
+		if count % 100 == 0:
+			print "Adding geodata (%d%%) - %d queries, %d repeats, %d locations not found" % ((count * 100) / listlen, num_queries, num_repeats, errors)
 		for person_field in person['tree']:
 			if person_field['tag'] == '_UID':
 				uid = person_field['data']
-			if person_field['tag'] == 'NAME':
-				print person_field['data']
 			if person_field['tag'] == 'BIRT' or person_field['tag'] == 'DEAT':
 				for field in person_field['tree']:
 					if field['tag'] == 'PLAC':
 						plac_string = field['data'].replace('Prob ', '')
 						if plac_string in locations:
 							response = locations[plac_string]
+							num_repeats+=1
 						else:
 							response = loc_to_latlon.to_latlon(plac_string)
 							locations[plac_string] = response
+							num_queries+=1
 						try:
-							resp_entry = {
-								'data': json.dumps(response), 'tag': 'RESP', 'pointer': '', 'tree': []
-								}
 							lat_entry = {
 								'data': str(response['results'][0]['geometry']['location']['lat']), 'tag': 'LATI', 'pointer': '', 'tree': []
 								}
@@ -36,11 +40,13 @@ def add_latlons(obj):
 								'data': str(response['results'][0]['geometry']['location']['lng']), 'tag': 'LONG', 'pointer': '', 'tree': []
 								}
 						except IndexError:
-							print "IndexError at _UID %s" % uid
-						person_field['tree'].append(resp_entry)
+							#print "IndexError at _UID %s" % uid
+							errors += 1
 						person_field['tree'].append(lat_entry)
 						person_field['tree'].append(lon_entry)
+		count+=1
 
+	print "Done adding geodata: %d queries, %d repeats, %d locations not found" % (num_queries, num_repeats, errors)
 	return obj
 
 def is_date(string):
@@ -90,7 +96,7 @@ def filter_list_of_dict(obj):
 	for item in indi_only:
 		item['tree'] = [d for d in item['tree'] if d['tag'] not in unwanted_keys]
 		if count % 1000 == 0:
-			print "Done %d out of %d" % (count, listlen) 
+			print "Fitlering JSON: %d out of %d" % (count, listlen) 
 		count += 1
 
 	return indi_only
