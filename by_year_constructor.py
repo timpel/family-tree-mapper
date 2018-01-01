@@ -3,16 +3,23 @@
 import sys
 import json
 from dateutil.parser import *
+import csv
 
 def get_year(date_str):
 	try:
-		yr = parse(date_str).year
-		return yr
+		yr = parse(date_str)
+		return str(yr)
 	except ValueError:
 		return None
 
+def add_years(d, years):
+    try:      
+        return str(d.replace(year = d.year + years))
+    except ValueError:      
+        return str(d + (date(d.year + years, 1, 1) - date(d.year, 1, 1)))
+
 def by_uid(obj):
-	people = {}
+	people = []
 	fields_to_keep = ['_UID', 'NAME']
 
 	for person in obj:
@@ -52,7 +59,14 @@ def by_uid(obj):
 					if tag == 'DATE':
 						info['D_YR'] = get_year(data)
 
-		people[info['_UID']] = info
+		if info['DLAT'] == None:
+			info['DLAT'] = info['BLAT']
+		if info['DLON'] == None:
+			info['DLON'] = info['BLON']
+		if info['D_YR'] == None:
+			info['D_YR'] = add_years(parse(info['B_YR']), 80)
+
+		people.append(info)
 
 	return people
 
@@ -66,6 +80,7 @@ def main():
 		    data = json.load(contactFile)
 
 		uids = by_uid(data)
+		print "UID dict done"
 
 		file = open(sys.argv[2], "w")
 
