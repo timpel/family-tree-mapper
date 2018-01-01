@@ -5,6 +5,7 @@ config.py
 *.txt
 *.json
 *.ged
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
