@@ -43,9 +43,9 @@ def by_uid(obj):
 					tag = birth_field['tag']
 					data = birth_field['data']
 					if tag == 'LATI':
-						info['BLAT'] = float(data)
+						info['BLAT'] = data
 					if tag == 'LONG':
-						info['BLON'] = float(data)
+						info['BLON'] = data
 					if tag == 'DATE':
 						info['B_YR'] = get_year(data)
 			if tag == 'DEAT':
@@ -53,9 +53,9 @@ def by_uid(obj):
 					tag = death_field['tag']
 					data = death_field['data']
 					if tag == 'LATI':
-						info['DLAT'] = float(data)
+						info['DLAT'] = data
 					if tag == 'LONG':
-						info['DLON'] = float(data)
+						info['DLON'] = data
 					if tag == 'DATE':
 						info['D_YR'] = get_year(data)
 
@@ -82,10 +82,14 @@ def main():
 		uids = by_uid(data)
 		print "UID dict done"
 
-		file = open(sys.argv[2], "w")
+		with open(sys.argv[2], 'w') as csvfile:
+		    fieldnames = ['_UID', 'NAME', 'BLAT', 'BLON', 'DLAT', 'DLON', 'B_YR', 'D_YR']
+		    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-		print >> file, json.dumps(uids)
-		
+		    writer.writeheader()
+
+		    for row in uids:
+		    	writer.writerow({k:v.encode('utf8') for k,v in row.items()})
 
 # If scraper.py was run directly by python
 if __name__ == '__main__':
