@@ -3,7 +3,57 @@
 import sys
 import json
 from dateutil.parser import *
+import datetime
 import csv
+
+def write_file(uids, file_name, file_format):
+	if file_format == 'json':
+		file = open(sys.argv[2], "w")
+		print >> file, json.dumps(uids)
+	elif file_format == 'csv':
+		with open(sys.argv[2], 'w') as csvfile:
+		    fieldnames = ['_UID', 'NAME', 'BPLC', 'DPLC', 'BLAT', 'BLON', 'DLAT', 'DLON', 'B_YR', 'D_YR']
+		    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+		    writer.writeheader()
+
+		    for row in uids:
+		    	writer.writerow({k:v.encode('utf8') for k,v in row.items()})
+	elif file_format == 'timeline':
+		file = open(sys.argv[2], "w")
+		print >> file, json.dumps(to_timeline(uids))
+	else:
+		print 'file format not recognized'
+
+def to_timeline(obj):
+	tl = {}
+
+	tl['type'] = "FeatureCollection"
+	tl['features'] = [to_geojson(person) for person in obj]
+
+	return tl
+
+def to_geojson(d):
+	gj = {}
+
+	gj['type'] = "Feature"
+	gj['geometry'] = {
+		"type": "Point",
+		"coordinates": [float(d['BLON']), float(d['BLAT'])]
+	}
+	gj['properties'] = {
+		"start": d['B_YR'],
+		"end": d['D_YR'],
+		"name": d['NAME'],
+		"placeofbirth": d['BPLC'],
+		"placeofdeath": d['DPLC'],
+		"uid": d['_UID']
+	}
+
+	return gj
+
+def smaller(d1, d2):
+	return d1 if d1 < d2 else d2
 
 def get_year(date_str):
 	try:
@@ -14,9 +64,9 @@ def get_year(date_str):
 
 def add_years(d, years):
     try:      
-        return str(d.replace(year = d.year + years))
+        return str(smaller(d.replace(year = d.year + years), datetime.datetime.now()))
     except ValueError:      
-        return str(d + (date(d.year + years, 1, 1) - date(d.year, 1, 1)))
+        return str(smaller(d + (date(d.year + years, 1, 1) - date(d.year, 1, 1)), datetime.datetime.now()))
 
 def by_uid(obj):
 	people = []
@@ -24,8 +74,10 @@ def by_uid(obj):
 
 	for person in obj:
 		info = {
-			'_UID': None,
-			'NAME': None,
+			'_UID': "",
+			'NAME': "",
+			'BPLC': "",
+			'DPLC': "",
 			'BLAT': None,
 			'BLON': None,
 			'DLAT': None,
@@ -48,6 +100,8 @@ def by_uid(obj):
 						info['BLON'] = data
 					if tag == 'DATE':
 						info['B_YR'] = get_year(data)
+					if tag == 'PLAC':
+						info['BPLC'] = data
 			if tag == 'DEAT':
 				for death_field in person_field['tree']:
 					tag = death_field['tag']
@@ -58,6 +112,8 @@ def by_uid(obj):
 						info['DLON'] = data
 					if tag == 'DATE':
 						info['D_YR'] = get_year(data)
+					if tag == 'PLAC':
+						info['DPLC'] = data
 
 		if info['DLAT'] == None:
 			info['DLAT'] = info['BLAT']
@@ -71,25 +127,17 @@ def by_uid(obj):
 	return people
 
 def main():
-	# Verify that 1 parameter was entered in command line
-	if len(sys.argv) != 3:
-		print 'Usage: python by_year_constructor.py input_file output_file'
+	# Verify correct number of parameters entered in command line
+	if len(sys.argv) != 4:
+		print 'Usage: python by_year_constructor.py input_file output_file output_format'
 	
 	else:
 		with open(sys.argv[1]) as contactFile:
 		    data = json.load(contactFile)
 
 		uids = by_uid(data)
-		print "UID dict done"
 
-		with open(sys.argv[2], 'w') as csvfile:
-		    fieldnames = ['_UID', 'NAME', 'BLAT', 'BLON', 'DLAT', 'DLON', 'B_YR', 'D_YR']
-		    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-		    writer.writeheader()
-
-		    for row in uids:
-		    	writer.writerow({k:v.encode('utf8') for k,v in row.items()})
+		write_file(uids, sys.argv[2], sys.argv[3])
 
 # If scraper.py was run directly by python
 if __name__ == '__main__':
