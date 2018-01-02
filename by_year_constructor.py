@@ -29,7 +29,7 @@ def to_timeline(obj):
 	tl = {}
 
 	tl['type'] = "FeatureCollection"
-	tl['features'] = [to_geojson(person) for person in obj]
+	tl['features'] = sorted([to_geojson(person) for person in obj], key=lambda k: k['properties']['time'])
 
 	return tl
 
@@ -42,7 +42,7 @@ def to_geojson(d):
 		"coordinates": [float(d['BLON']), float(d['BLAT'])]
 	}
 	gj['properties'] = {
-		"start": d['B_YR'],
+		"time": d['B_YR'],
 		"end": d['D_YR'],
 		"name": d['NAME'],
 		"placeofbirth": d['BPLC'],
