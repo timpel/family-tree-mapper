@@ -1,6 +1,4 @@
 # family-tree-mapper
 A tool for visualizing ambiguous geodata from family tree (GEDCOM) data
 
-These scripts were used to convert GEDCOM files containing family tree data into a variety of formats suitable for integration with various mapping packages.
-
-See (one) finished product here: http://www.timwp.com/familytreemapper/map.html
+These scripts were used to 1) convert GEDCOM files containing family tree data into JSON, CSV and GeoJSON format, and 2) geocode ambiguous birthplace information to allow mapping the family tree. The end result is a [pretty cool map](https://timpel.github.io/projects/family_tree_mapper/) (made with [Leaflet.js](https://leafletjs.com/)).
